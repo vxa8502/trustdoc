@@ -1,0 +1,34 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.ruff_cache/
+.pytest_cache/
+
+# data & model artifacts
+data/raw/
+data/processed/
+*.ckpt
+*.pt
+*.bin
+*.safetensors
+checkpoints/
+
+# experiment tracking
+wandb/
+mlruns/
+
+# Result figures/metrics (confusion matrices, reliability diagrams, etc.) ARE tracked --
+# they're the project's real deliverables meant to be shown in the README, not throwaway
+# build output. Only the heavy model weight files stay excluded (see *.bin/*.pt/*.ckpt/checkpoints/ above).
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Private local workspace -- session notes and planning docs. Never referenced by or needed
+# to run this project; excluded so it never lands in the public repo. (CLAUDE.md is already
+# excluded globally via core.excludesfile.)
+home/

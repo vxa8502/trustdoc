@@ -1,0 +1,22 @@
+# Config for LayoutLMv3 classifier fine-tuning.
+# Mirrored manually into notebooks/01_train_classifier_rvl_cdip_mini.ipynb since Kaggle
+# notebooks don't have direct access to this repo's files.
+model:
+  name: microsoft/layoutlmv3-base
+  # num_labels is NOT hardcoded here -- detect it from the dataset's label feature at
+  # training time (rvl_cdip_mini is a subsample of full RVL-CDIP, so it's the original
+  # 16-class schema, not a re-labeled one) -- never assume dataset schema.
+
+dataset:
+  name: dvgodoy/rvl_cdip_mini
+
+train:
+  output_dir: results/classifier
+  fp16: true  # T4 does not support bf16
+  gradient_accumulation_steps: 4
+  per_device_train_batch_size: 8
+  num_train_epochs: 15
+  # 5.0e-5, not 5e-5 -- PyYAML's implicit float resolver requires a decimal point for
+  # scientific notation; without one "5e-5" silently parses as the *string* "5e-5", not a float.
+  learning_rate: 5.0e-5
+  seed: 42

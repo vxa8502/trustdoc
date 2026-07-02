@@ -1,0 +1,22 @@
+# Config for LayoutLMv3 field-extraction (NER) fine-tuning.
+# Mirrored manually into notebooks/02_train_extractor_funsd.ipynb since Kaggle
+# notebooks don't have direct access to this repo's files.
+model:
+  name: microsoft/layoutlmv3-base
+  # num_labels is NOT hardcoded here -- detect it from the dataset's ner_tags feature at
+  # training time (dataset["train"].features["ner_tags"].feature.names), same convention
+  # as the classifier config.
+
+dataset:
+  name: nielsr/funsd-layoutlmv3
+
+train:
+  output_dir: results/extractor
+  fp16: true  # T4 does not support bf16
+  gradient_accumulation_steps: 4
+  per_device_train_batch_size: 8
+  num_train_epochs: 15  # matches the published FUNSD benchmark (15 epochs -> 0.906 F1 on an RTX 4090)
+  # 5.0e-5, not 5e-5 -- PyYAML's implicit float resolver requires a decimal point for
+  # scientific notation; without one "5e-5" silently parses as the *string* "5e-5", not a float.
+  learning_rate: 5.0e-5
+  seed: 42

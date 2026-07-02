@@ -1,0 +1,11 @@
+# Fitted on the rvl_cdip_mini validation split by notebooks/03_calibrate_classifier.ipynb
+# (2026-07-02 Kaggle run, refit against the classifier retrained the same day -- 86.75% val
+# accuracy per results/classifier_report.json). Refit if the classifier is ever retrained again;
+# a stale temperature silently miscalibrates a different model's logits with no error raised.
+temperature: 1.177
+
+# Predictions below this calibrated confidence get flagged for human review instead of
+# auto-approved. 0.9 is not a magic number: at this threshold the calibration run measured
+# 81.8% auto-approval at 89.0% precision on the held-out test split (see results/calibration_summary.json
+# for the full threshold curve if a different trade-off point is wanted).
+confidence_threshold: 0.9

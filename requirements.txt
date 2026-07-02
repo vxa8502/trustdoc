@@ -1,0 +1,44 @@
+# transformers: NOT pinned to the old pre-4.34 "training slowdown" version anymore. That
+# pin only ever mattered for Kaggle training (issue #30974), and Kaggle doesn't use this
+# requirements.txt at all -- it has its own preinstalled environment. Pinning to 4.33.3 here
+# actively broke local/Docker inference: the published models were saved by transformers
+# 5.0.0 (Kaggle's version) using its newer processor_config.json layout, which 4.33.3's
+# AutoProcessor can't read (expects the older preprocessor_config.json name instead).
+#
+# Every package below is pinned to an exact version (not `>=`) so CI/Docker builds are
+# reproducible and don't silently pull a future release with breaking or malicious changes.
+# Dependabot (.github/dependabot.yml) opens a PR when a pin is worth bumping, so this doesn't
+# just rot -- update via that PR (which re-runs CI) rather than hand-editing versions here.
+transformers==5.12.1
+
+# CPU-only torch: on Linux (i.e. Docker), plain PyPI torch pulls in ~2GB of NVIDIA CUDA
+# packages that are never used here (OCR and inference both run CPU-only) -- the dedicated
+# CPU wheel index avoids that entirely. Harmless on macOS/Windows dev machines too, since
+# there's no CUDA variant to pull there regardless.
+# NOTE: --extra-index-url makes pip consider this index for every package below, not just
+# torch -- normally a dependency-confusion risk, but low here since download.pytorch.org only
+# ever hosts torch-ecosystem wheels, and every package is exact-pinned anyway.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.12.1
+torchvision==0.27.1
+datasets==5.0.0
+tokenizers==0.22.2
+sentencepiece==0.2.1
+huggingface_hub==1.21.0
+
+# OCR
+pytesseract==0.3.13
+Pillow==12.3.0
+
+# extraction / NER eval
+seqeval==1.2.2
+
+# calibration & metrics
+scikit-learn==1.9.0
+numpy==2.4.6
+pandas==3.0.3
+matplotlib==3.11.0
+
+# config & tooling
+PyYAML==6.0.3
+pytest==9.1.1
