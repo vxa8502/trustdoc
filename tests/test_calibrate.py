@@ -1,10 +1,21 @@
 import numpy as np
+import pytest
 import torch
 
 from src.calibrate.flagging import should_flag, threshold_report
 from src.calibrate.metrics import binned_stats, compute_ece, compute_mce, confidence_and_correctness
 from src.calibrate.reliability_diagram import plot_reliability_diagram
-from src.calibrate.temperature_scaling import fit_temperature
+from src.calibrate.temperature_scaling import StaleCalibrationError, check_model_revision, fit_temperature
+
+
+class _FakeConfig:
+    def __init__(self, commit_hash):
+        self._commit_hash = commit_hash
+
+
+class _FakeModel:
+    def __init__(self, commit_hash):
+        self.config = _FakeConfig(commit_hash)
 
 
 def test_ece_zero_for_perfect_calibration():
@@ -137,6 +148,28 @@ def test_binned_stats_counts_sum_to_total():
     assert total_count == 500
 
 
+def test_check_model_revision_passes_on_matching_revision():
+    model = _FakeModel("abc123")
+    check_model_revision(model, "abc123", "test-model")  # must not raise
+
+
+def test_check_model_revision_raises_on_mismatch():
+    # Reproduces the real incident this guards against: a retrained model (new commit hash) with
+    # a calibration config still pinned to the old one -- must fail loudly, not silently apply a
+    # stale temperature to the new model's logits.
+    model = _FakeModel("new-commit-after-retrain")
+    with pytest.raises(StaleCalibrationError, match="new-commit-after-retrain"):
+        check_model_revision(model, "old-commit-before-retrain", "test-model")
+
+
+def test_check_model_revision_raises_when_model_has_no_commit_hash():
+    # A model not loaded from the Hub (e.g. a bare mock in another test) has no _commit_hash at
+    # all -- this must still be treated as a mismatch, not silently pass.
+    model = _FakeModel(None)
+    with pytest.raises(StaleCalibrationError):
+        check_model_revision(model, "abc123", "test-model")
+
+
 def test_compute_ece_mce_and_reliability_diagram_accept_precomputed_stats():
     # compute_ece/compute_mce/plot_reliability_diagram all consume the exact same per-bin stats
     # -- a caller computing all three (e.g. notebooks/03_calibrate_classifier.ipynb) should be
@@ -151,5 +184,11 @@ def test_compute_ece_mce_and_reliability_diagram_accept_precomputed_stats():
     assert compute_ece(confidences, correct, n_bins=15, stats=stats) == compute_ece(confidences, correct, n_bins=15)
     assert compute_mce(confidences, correct, n_bins=15, stats=stats) == compute_mce(confidences, correct, n_bins=15)
 
-    ax = plot_reliability_diagram(confidences, correct, n_bins=15, stats=stats)
-    assert ax is not None
+    # `ax is not None` can't fail (plot_reliability_diagram always returns an Axes) and wouldn't
+    # catch the `stats=` path silently diverging from the auto-computed one -- cross-check the
+    # actual plotted bar heights between the two call styles instead.
+    ax_precomputed = plot_reliability_diagram(confidences, correct, n_bins=15, stats=stats)
+    ax_autocomputed = plot_reliability_diagram(confidences, correct, n_bins=15)
+    heights_precomputed = [patch.get_height() for patch in ax_precomputed.patches]
+    heights_autocomputed = [patch.get_height() for patch in ax_autocomputed.patches]
+    np.testing.assert_allclose(heights_precomputed, heights_autocomputed)

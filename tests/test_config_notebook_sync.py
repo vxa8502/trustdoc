@@ -1,17 +1,24 @@
-"""Guards configs/{classifier,extractor}.yaml against silently drifting from the notebook cell
-that actually trains with those values. Kaggle notebooks can't import this repo, so the config
-and the notebook can only be kept in sync by convention -- this test makes that convention a
-checked invariant instead of just a comment.
+"""Guards config values against silently drifting from whatever actually produced them:
+- configs/{classifier,extractor}.yaml's training hyperparameters vs. the notebook cell that
+  actually trains with those values (Kaggle notebooks can't import this repo, so this can only
+  be kept in sync by convention otherwise).
+- configs/calibration.yaml's fitted temperature/model_revision vs. the results/*.json a
+  calibration run actually produced (same drift risk, different source of truth).
+Both are the same class of bug this project has hit more than once (a hand-copied value with
+nothing checking it stays copied correctly) -- this file makes both checked invariants instead
+of just a comment.
 """
 import ast
 import json
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 NOTEBOOKS_DIR = Path(__file__).resolve().parent.parent / "notebooks"
 CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 
 
 def _notebook_source(notebook_name: str) -> str:
@@ -83,3 +90,26 @@ def test_extractor_config_matches_training_notebook():
     _assert_train_config_matches_notebook(
         "extractor.yaml", "02_train_extractor_funsd.ipynb"
     )
+
+
+def test_extraction_calibration_matches_calibration_script_output():
+    # scripts/calibrate_extractor.py wrote both configs/calibration.yaml's `extraction:` block
+    # and results/extractor_calibration_summary.json from the same run -- this catches either
+    # one being hand-edited (or re-run) without updating the other.
+    calibration = yaml.safe_load((CONFIGS_DIR / "calibration.yaml").read_text())["extraction"]
+    summary = json.loads((RESULTS_DIR / "extractor_calibration_summary.json").read_text())
+    assert calibration["model_revision"] == summary["model_revision"]
+    assert calibration["temperature"] == pytest.approx(summary["temperature"], rel=1e-3)
+
+
+def test_classifier_calibration_temperature_matches_summary():
+    # Only `temperature` is checked here, not `model_revision` -- unlike the extraction summary
+    # above, results/calibration_summary.json predates the model_revision concept: it was produced
+    # by an earlier run of notebooks/03_calibrate_classifier.ipynb, before that notebook captured
+    # the model's Hub commit hash. The notebook now captures `model.config._commit_hash` into the
+    # summary for any *future* run (see its model-loading and summary-saving cells), which will
+    # let this check extend to model_revision too once that notebook is re-run and its output
+    # committed -- until then, this is a real but intentionally partial guard, not a design flaw.
+    calibration = yaml.safe_load((CONFIGS_DIR / "calibration.yaml").read_text())["classifier"]
+    summary = json.loads((RESULTS_DIR / "calibration_summary.json").read_text())
+    assert calibration["temperature"] == pytest.approx(summary["temperature"], rel=1e-3)
