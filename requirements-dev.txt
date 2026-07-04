@@ -1,0 +1,16 @@
+# Local development/testing extras on top of the runtime requirements -- installed by CI and
+# recommended for local `.venv` setup (see README.md's Setup/Tests sections). Never installed
+# inside the Docker inference image; docker/Dockerfile installs requirements.txt only, on
+# purpose, to keep that image lean.
+-r requirements.txt
+
+# test runner
+pytest==9.1.1
+
+# needed by src/calibrate/reliability_diagram.py (a reporting module, never imported by
+# src/pipeline.py's runtime path) and by tests/test_calibrate.py's plotting tests
+matplotlib==3.11.0
+
+# needed only by scripts/calibrate_extractor.py (loads FUNSD locally to fit the extraction
+# head's calibration) and its test -- never imported by src/ or the Docker inference path
+datasets==5.0.0

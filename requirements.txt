@@ -1,3 +1,8 @@
+# Runtime dependencies only -- this is exactly what docker/Dockerfile installs into the
+# inference image, and it should stay that way to keep that image lean. For local development
+# (running the test suite, linting, or scripts/calibrate_extractor.py), install
+# requirements-dev.txt instead, which includes this file plus the extras those need.
+#
 # transformers: NOT pinned to the old pre-4.34 "training slowdown" version anymore. That
 # pin only ever mattered for Kaggle training (issue #30974), and Kaggle doesn't use this
 # requirements.txt at all -- it has its own preinstalled environment. Pinning to 4.33.3 here
@@ -21,7 +26,6 @@ transformers==5.12.1
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.12.1
 torchvision==0.27.1
-datasets==5.0.0
 tokenizers==0.22.2
 sentencepiece==0.2.1
 huggingface_hub==1.21.0
@@ -30,15 +34,13 @@ huggingface_hub==1.21.0
 pytesseract==0.3.13
 Pillow==12.3.0
 
-# extraction / NER eval
-seqeval==1.2.2
-
-# calibration & metrics
-scikit-learn==1.9.0
+# calibration -- numpy is the only calibration-side dependency the actual inference path
+# (src/pipeline.py -> src/calibrate/flagging.py) needs at runtime. pandas, scikit-learn, and
+# seqeval are intentionally not listed here: none of them are imported anywhere in src/, tests/,
+# or scripts/ -- they were only ever relevant to the Kaggle training notebooks' own scoring
+# code, and those notebooks don't read this file at all (see the transformers note above), so
+# they'd be pure dead weight shipping into every local install and the Docker image.
 numpy==2.4.6
-pandas==3.0.3
-matplotlib==3.11.0
 
-# config & tooling
+# config
 PyYAML==6.0.3
-pytest==9.1.1
