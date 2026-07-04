@@ -24,7 +24,7 @@ transformers==5.12.1
 # torch -- normally a dependency-confusion risk, but low here since download.pytorch.org only
 # ever hosts torch-ecosystem wheels, and every package is exact-pinned anyway.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.12.1
+torch==2.12.1+cpu
 torchvision==0.27.1
 tokenizers==0.22.2
 sentencepiece==0.2.1
