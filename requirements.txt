@@ -25,7 +25,7 @@ transformers==5.12.1
 # ever hosts torch-ecosystem wheels, and every package is exact-pinned anyway.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.12.1
-torchvision==0.27.1
+torchvision==0.27.1+cpu
 tokenizers==0.22.2
 sentencepiece==0.2.1
 huggingface_hub==1.21.0
