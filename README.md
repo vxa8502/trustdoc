@@ -1,12 +1,14 @@
 # TrustDoc — A Document AI Trust Layer
 
-Classifies documents, extracts key fields, and — the actual point of the project — calibrates the classifier's confidence so low-confidence predictions get routed to a human reviewer instead of shipped as fact. This is the same trust-layer pattern used in production document-processing platforms (e.g. Instabase): don't just predict, know when not to trust the prediction.
+Classifies documents, extracts key fields, and — the actual point of the project — calibrates *both* the classifier's and the extractor's confidence, independently, so low-confidence predictions get routed to a human reviewer instead of shipped as fact. This is the same trust-layer pattern used in production document-processing platforms (e.g. Instabase): don't just predict, know when not to trust the prediction.
 
 ## Results
 
-**Classifier — LayoutLMv3-base fine-tuned on `rvl_cdip_mini`, 86.75% validation accuracy:**
+**Classifier — LayoutLMv3-base fine-tuned on `rvl_cdip_mini`, 86.75% validation accuracy (80.0% on the held-out test split — see caveat below):**
 
 ![Classifier confusion matrix](results/classifier_confusion_matrix.png)
+
+The 86.75% figure is validation accuracy, used for checkpoint selection during training (the table and confusion matrix below are computed on that same split). The held-out test split — never used for model selection — scores lower, at 80.0% (`results/calibration_summary.json`'s `test_accuracy`). Both numbers are real and both are reported; the gap is normal (validation accuracy is usually a slightly optimistic estimate of generalization since the best checkpoint is chosen against it) but shouldn't be hidden behind a single headline number.
 
 | Class | Precision | Recall | F1 | Support |
 |---|---|---|---|---|
@@ -41,22 +43,27 @@ Errors cluster in visually/structurally similar document types rather than rando
 
 HEADER is the clear weak point, but it also has 7-9x less training signal than the other two entity types — the gap tracks class imbalance, not a bug.
 
-**Calibration — the centerpiece.** Temperature scaling fit on a held-out validation split (T=1.177), evaluated on a separate held-out test split (no fit/eval leakage):
+**Calibration — the centerpiece, computed separately for each head (no shared temperature between them).**
+
+*Classifier:* temperature scaling fit on a held-out validation split (T=1.177), evaluated on a separate held-out test split (no fit/eval leakage):
 
 ![Reliability diagrams before and after calibration, with per-bin sample counts](results/reliability_diagrams.png)
 
-ECE improved from 0.144 to 0.120 after calibration, and MCE (the single-worst-bin metric) improved too, 0.770→0.571. The count panels underneath each chart matter for reading it honestly: roughly 325 of the 400 test examples land in the single 0.9–1.0 confidence bin, so that top-right bar carries far more weight than the sparser mid-confidence bins next to it — exactly the context a bare reliability diagram (accuracy bars with no counts) would hide. This is refit whenever the classifier itself is retrained, since a stale temperature miscalibrates a different model's logits silently (see `configs/calibration.yaml`).
+ECE improved from 0.144 to 0.120 after calibration, and MCE (the single-worst-bin metric) improved too, 0.770→0.571. The count panels underneath each chart matter for reading it honestly: roughly 325 of the 400 test examples land in the single 0.9–1.0 confidence bin, so that top-right bar carries far more weight than the sparser mid-confidence bins next to it — exactly the context a bare reliability diagram (accuracy bars with no counts) would hide. This is refit whenever the classifier itself is retrained, since a stale temperature miscalibrates a different model's logits silently (see `configs/calibration.yaml`; `src/pipeline.py` checks the model's revision against the config's pinned value and raises rather than applying a stale temperature).
 
-**Business framing — the actual trust-layer output:**
+*Extractor:* temperature scaling fit locally (CPU, no Kaggle needed) against FUNSD's 50-document held-out test split, 8,356 word-level predictions (`scripts/calibrate_extractor.py`, `results/extractor_calibration_summary.json`). Word-level tag accuracy 84.3%; ECE improved from 0.049 to 0.039, MCE from 0.169 to 0.078 after fitting T=1.081. Each extracted field now carries its own calibrated confidence, independent of the document-level classification confidence — previously the extractor had no confidence signal at all.
+
+**Business framing — the actual trust-layer output, per head:**
 
 ![Auto-approve rate vs. precision trade-off across confidence thresholds](results/threshold_tradeoff.png)
 
-| Confidence threshold | Auto-approve rate | Precision among auto-approved |
-|---|---|---|
-| ≥ 0.70 | 92.0% | 85.1% |
-| ≥ 0.90 | 81.8% | 89.0% |
+| | Confidence threshold | Auto-approve rate | Precision among auto-approved |
+|---|---|---|---|
+| Classifier (per document) | ≥ 0.70 | 92.0% | 85.1% |
+| Classifier (per document) | ≥ 0.90 | 81.8% | 89.0% |
+| Extractor (per field) | ≥ 0.90 | 62.6% | 90.4% |
 
-Raising the confidence bar trades auto-approval volume for precision — the concrete lever a human-in-the-loop review process would tune.
+Raising the confidence bar trades auto-approval volume for precision — the concrete lever a human-in-the-loop review process would tune, independently for whole-document classification and for individual extracted fields.
 
 ## Architecture
 
@@ -72,8 +79,9 @@ OCR (Tesseract) -> Classify (LayoutLMv3) -> Calibrate & flag (temperature scalin
 
 1. **OCR** — Tesseract (CPU) extracts words + bounding boxes, normalized to LayoutLMv3's required 0-1000 coordinate scale (`src/ocr/tesseract.py`).
 2. **Classify** — LayoutLMv3-base fine-tuned on `dvgodoy/rvl_cdip_mini` (a 1% subset of RVL-CDIP; training on the full 320k-image set was too slow on a free-tier T4, and 86.75% accuracy on the mini subset already cleared the project's own 70%-accuracy go/no-go threshold).
-3. **Calibrate** — temperature scaling on the classifier's logits (`src/calibrate/`), with ECE/MCE and reliability diagrams computed before/after on held-out data. Predictions below a tuned confidence threshold are flagged for human review instead of auto-approved.
+3. **Calibrate & flag (classification)** — temperature scaling on the classifier's logits (`src/calibrate/`), with ECE/MCE and reliability diagrams computed before/after on held-out data. Predictions below a tuned confidence threshold are flagged for human review instead of auto-approved.
 4. **Extract** — a LayoutLMv3 NER head fine-tuned on FUNSD pulls out HEADER/QUESTION/ANSWER fields, layout-aware (not a big LLM — keeps the pipeline reproducible and GPU-optional at inference time).
+5. **Calibrate & flag (extraction)** — the same temperature-scaling/thresholding mechanism as step 3, fit independently against the extractor's own logits (`scripts/calibrate_extractor.py`), so each extracted field carries its own calibrated confidence and its own auto-approve/flag decision — not just the whole document's.
 
 ## Limitations & Ethics
 
@@ -98,6 +106,12 @@ Code is MIT (see `LICENSE`). Both published models are fine-tuned from `microsof
 pip install -r requirements.txt
 ```
 
+For local development (running tests, linting, or `scripts/calibrate_extractor.py`), install `requirements-dev.txt` instead — it includes `requirements.txt` plus test/tooling-only extras that the Docker inference image deliberately doesn't ship:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
 Tesseract must also be installed as a system binary (`apt install tesseract-ocr` / `brew install tesseract`) — already handled in `docker/Dockerfile` and `.github/workflows/ci.yml`.
 
 ## Running the pipeline
@@ -113,13 +127,13 @@ docker build -f docker/Dockerfile -t trustdoc .
 docker run --rm -v "$(pwd)/path/to:/data:ro" trustdoc /data/document.png
 ```
 
-Both print a JSON result: `document_type`, calibrated `confidence`, `flagged_for_review` (true below the tuned threshold in `configs/calibration.yaml`), and `extracted_fields`.
+Both print a JSON result: `document_type`, calibrated `confidence`, `flagged_for_review` (true below the tuned classification threshold in `configs/calibration.yaml`), and `extracted_fields` — each field carrying its own calibrated `confidence` and its own `flagged_for_review`, independent of the document-level decision.
 
 ## Tests
 
 ```bash
 pytest tests/ -v
-ruff check src tests
+ruff check src tests scripts
 ```
 
 Unit tests cover the OCR wrapper, the calibration math (including a hard regression test that temperature scaling provably preserves prediction accuracy while reducing ECE), and the pipeline's own calibration/flagging logic (model inference itself is mocked in these tests — verified manually against the real published models instead, since re-testing HF Hub network calls in CI would be slow and flaky for no extra correctness signal).
@@ -127,14 +141,17 @@ Unit tests cover the OCR wrapper, the calibration math (including a hard regress
 ## Repo layout
 
 ```
-configs/       training/eval/calibration YAML configs
+requirements.txt      runtime deps only -- exactly what docker/Dockerfile installs
+requirements-dev.txt   + test/lint/local-tooling extras (pytest, matplotlib, datasets)
+configs/       training/eval/calibration YAML configs (per-head: classifier + extraction)
 data/          dataset provenance notes (no raw data or loader scripts -- each notebook loads its own dataset directly)
 notebooks/     Kaggle training/calibration notebooks (00-03, run in order)
+scripts/       calibrate_extractor.py -- fits the extraction head's temperature locally (CPU-only, no Kaggle needed)
 src/ocr/       Tesseract wrapper
 src/classify/  LayoutLMv3 classifier inference
 src/extract/   LayoutLMv3 NER extractor inference
-src/calibrate/ temperature scaling, ECE/MCE, reliability diagrams, threshold flagging
-src/pipeline.py  end-to-end OCR -> classify -> calibrate -> flag -> extract
+src/calibrate/ temperature scaling, ECE/MCE, reliability diagrams, threshold flagging, model-revision checks
+src/pipeline.py  end-to-end OCR -> classify -> calibrate/flag -> extract -> calibrate/flag
 tests/         pytest suite
 docker/        Dockerfile
 results/       metrics, figures, reliability diagrams
