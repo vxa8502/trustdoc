@@ -40,7 +40,7 @@ Pillow==12.3.0
 # or scripts/ -- they were only ever relevant to the Kaggle training notebooks' own scoring
 # code, and those notebooks don't read this file at all (see the transformers note above), so
 # they'd be pure dead weight shipping into every local install and the Docker image.
-numpy==2.4.6
+numpy==2.5.0
 
 # config
 PyYAML==6.0.3
