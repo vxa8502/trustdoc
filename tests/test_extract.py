@@ -5,10 +5,15 @@ calls themselves are thin pass-throughs to the real HF API, verified manually in
 tests/test_pipeline.py's module docstring)."""
 from types import SimpleNamespace
 
+import pytest
 import torch
 from PIL import Image
 
-from src.extract.predict import extract_fields
+from src.extract.predict import extract_fields, first_token_per_word
+
+# softmax([0, 0, 10]) for a 3-class problem -- the exact confidence _fake_model's dominant
+# logit (10.0) produces, computed once here instead of a magic-looking literal in each test.
+_DOMINANT_LOGIT_CONFIDENCE = torch.softmax(torch.tensor([0.0, 0.0, 10.0]), dim=-1).max().item()
 
 ID2LABEL = {0: "O", 1: "B-QUESTION", 2: "B-ANSWER"}
 
@@ -49,6 +54,18 @@ def _fake_model(predicted_label_ids):
     return _FakeModel(ID2LABEL, logits)
 
 
+def test_first_token_per_word_dedups_subwords_and_skips_specials():
+    # The shared rule extract_fields() and scripts/calibrate_extractor.py both consume -- tested
+    # directly here as a pure function, independent of any model/processor.
+    word_ids = [None, 0, 1, 1, 1, 1, 2, None]
+    #             ^CLS  Date  --------8/4/92-------- Random ^SEP
+    assert first_token_per_word(word_ids) == [(1, 0), (2, 1), (6, 2)]
+
+
+def test_first_token_per_word_empty_when_all_special():
+    assert first_token_per_word([None, None]) == []
+
+
 def test_extract_fields_dedups_subwords_skips_specials_and_filters_o():
     # 3 words: "Date" (1 token), "8/4/92" (4 subword tokens), "Random" (1 token) -- with a
     # leading/trailing special token (word_id None) like a real [CLS]/[SEP] would produce.
@@ -71,8 +88,8 @@ def test_extract_fields_dedups_subwords_skips_specials_and_filters_o():
 
     # "Random" is excluded: its first (only) token predicts "O".
     assert fields == [
-        {"word": "Date", "label": "B-QUESTION"},
-        {"word": "8/4/92", "label": "B-ANSWER"},
+        {"word": "Date", "label": "B-QUESTION", "confidence": pytest.approx(_DOMINANT_LOGIT_CONFIDENCE)},
+        {"word": "8/4/92", "label": "B-ANSWER", "confidence": pytest.approx(_DOMINANT_LOGIT_CONFIDENCE)},
     ]
 
 
@@ -87,3 +104,25 @@ def test_extract_fields_returns_empty_list_when_everything_is_o_or_special():
 
     fields = extract_fields(image, words, boxes=[[0, 0, 1, 1]], model=model, processor=processor)
     assert fields == []
+
+
+def test_extract_fields_temperature_lowers_confidence_without_changing_labels():
+    # Same property src/calibrate/temperature_scaling.py's classifier test asserts, applied to
+    # the extractor's per-field confidence: cooling (T > 1) must lower confidence but must never
+    # change which label wins (dividing every logit by the same positive constant can't flip an
+    # argmax).
+    words = ["Date"]
+    word_ids = [None, 0, None]
+    predicted_label_ids = [0, 1, 0]
+
+    model = _fake_model(predicted_label_ids)
+    processor = _fake_processor(word_ids)
+    image = Image.new("RGB", (10, 10))
+
+    fields_uncalibrated = extract_fields(image, words, boxes=[[0, 0, 1, 1]], model=model, processor=processor)
+    fields_cooled = extract_fields(
+        image, words, boxes=[[0, 0, 1, 1]], model=model, processor=processor, temperature=5.0
+    )
+
+    assert fields_uncalibrated[0]["label"] == fields_cooled[0]["label"] == "B-QUESTION"
+    assert fields_cooled[0]["confidence"] < fields_uncalibrated[0]["confidence"]

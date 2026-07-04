@@ -1,0 +1,312 @@
+{
+  "model_revision": "90a46a744b2a5ff2420d3470cc7251545b1808e0",
+  "n_words": 8356,
+  "temperature": 1.0807493925094604,
+  "test_accuracy": 0.8429870751555768,
+  "ece_before": 0.048787356282518846,
+  "mce_before": 0.16863316297531128,
+  "ece_after": 0.039013690144437035,
+  "mce_after": 0.07763397693634033,
+  "threshold_report": [
+    {
+      "threshold": 0.5,
+      "auto_approve_rate": 0.9664911440880805,
+      "precision": 0.8579742446755819,
+      "n_auto_approved": 8076
+    },
+    {
+      "threshold": 0.51,
+      "auto_approve_rate": 0.9626615605552896,
+      "precision": 0.859771258080557,
+      "n_auto_approved": 8044
+    },
+    {
+      "threshold": 0.52,
+      "auto_approve_rate": 0.9593106749640976,
+      "precision": 0.8607784431137725,
+      "n_auto_approved": 8016
+    },
+    {
+      "threshold": 0.53,
+      "auto_approve_rate": 0.9553614169459071,
+      "precision": 0.8618313917073782,
+      "n_auto_approved": 7983
+    },
+    {
+      "threshold": 0.54,
+      "auto_approve_rate": 0.9505744375299187,
+      "precision": 0.8641571194762684,
+      "n_auto_approved": 7943
+    },
+    {
+      "threshold": 0.55,
+      "auto_approve_rate": 0.9451890856869315,
+      "precision": 0.8662952646239555,
+      "n_auto_approved": 7898
+    },
+    {
+      "threshold": 0.56,
+      "auto_approve_rate": 0.9399234083293442,
+      "precision": 0.8675833969951617,
+      "n_auto_approved": 7854
+    },
+    {
+      "threshold": 0.5700000000000001,
+      "auto_approve_rate": 0.9347774054571565,
+      "precision": 0.8700550505697093,
+      "n_auto_approved": 7811
+    },
+    {
+      "threshold": 0.58,
+      "auto_approve_rate": 0.9301101005265677,
+      "precision": 0.8722336592897582,
+      "n_auto_approved": 7772
+    },
+    {
+      "threshold": 0.59,
+      "auto_approve_rate": 0.9260411680229775,
+      "precision": 0.873610752132334,
+      "n_auto_approved": 7738
+    },
+    {
+      "threshold": 0.6,
+      "auto_approve_rate": 0.9232886548587841,
+      "precision": 0.8745301360985094,
+      "n_auto_approved": 7715
+    },
+    {
+      "threshold": 0.61,
+      "auto_approve_rate": 0.9188606988989947,
+      "precision": 0.8754884084396979,
+      "n_auto_approved": 7678
+    },
+    {
+      "threshold": 0.62,
+      "auto_approve_rate": 0.9156294877932025,
+      "precision": 0.8760946281531826,
+      "n_auto_approved": 7651
+    },
+    {
+      "threshold": 0.63,
+      "auto_approve_rate": 0.9117999042604117,
+      "precision": 0.8776742354639716,
+      "n_auto_approved": 7619
+    },
+    {
+      "threshold": 0.64,
+      "auto_approve_rate": 0.9070129248444232,
+      "precision": 0.8797994458371817,
+      "n_auto_approved": 7579
+    },
+    {
+      "threshold": 0.65,
+      "auto_approve_rate": 0.902106270943035,
+      "precision": 0.8812682409127089,
+      "n_auto_approved": 7538
+    },
+    {
+      "threshold": 0.66,
+      "auto_approve_rate": 0.8973192915270465,
+      "precision": 0.8818351560416111,
+      "n_auto_approved": 7498
+    },
+    {
+      "threshold": 0.67,
+      "auto_approve_rate": 0.893729056965055,
+      "precision": 0.8828334226031066,
+      "n_auto_approved": 7468
+    },
+    {
+      "threshold": 0.6799999999999999,
+      "auto_approve_rate": 0.8872666347534706,
+      "precision": 0.884272997032641,
+      "n_auto_approved": 7414
+    },
+    {
+      "threshold": 0.69,
+      "auto_approve_rate": 0.8830780277644806,
+      "precision": 0.8848082395988617,
+      "n_auto_approved": 7379
+    },
+    {
+      "threshold": 0.7,
+      "auto_approve_rate": 0.8780516993776927,
+      "precision": 0.8856480850483849,
+      "n_auto_approved": 7337
+    },
+    {
+      "threshold": 0.71,
+      "auto_approve_rate": 0.872905696505505,
+      "precision": 0.8875788319166438,
+      "n_auto_approved": 7294
+    },
+    {
+      "threshold": 0.72,
+      "auto_approve_rate": 0.8677596936333174,
+      "precision": 0.887877534133223,
+      "n_auto_approved": 7251
+    },
+    {
+      "threshold": 0.73,
+      "auto_approve_rate": 0.8618956438487314,
+      "precision": 0.8890585948347681,
+      "n_auto_approved": 7202
+    },
+    {
+      "threshold": 0.74,
+      "auto_approve_rate": 0.8556725706079464,
+      "precision": 0.8910489510489511,
+      "n_auto_approved": 7150
+    },
+    {
+      "threshold": 0.75,
+      "auto_approve_rate": 0.8514839636189564,
+      "precision": 0.8920590302178496,
+      "n_auto_approved": 7115
+    },
+    {
+      "threshold": 0.76,
+      "auto_approve_rate": 0.8429870751555768,
+      "precision": 0.8938103350369109,
+      "n_auto_approved": 7044
+    },
+    {
+      "threshold": 0.77,
+      "auto_approve_rate": 0.8367640019147917,
+      "precision": 0.8951659038901602,
+      "n_auto_approved": 6992
+    },
+    {
+      "threshold": 0.78,
+      "auto_approve_rate": 0.8307802776448061,
+      "precision": 0.8961394410832613,
+      "n_auto_approved": 6942
+    },
+    {
+      "threshold": 0.79,
+      "auto_approve_rate": 0.8219243657252274,
+      "precision": 0.8969132207338381,
+      "n_auto_approved": 6868
+    },
+    {
+      "threshold": 0.8,
+      "auto_approve_rate": 0.8140258496888464,
+      "precision": 0.898265216112908,
+      "n_auto_approved": 6802
+    },
+    {
+      "threshold": 0.81,
+      "auto_approve_rate": 0.8028961225466731,
+      "precision": 0.9001341481591891,
+      "n_auto_approved": 6709
+    },
+    {
+      "threshold": 0.8200000000000001,
+      "auto_approve_rate": 0.7928434657730972,
+      "precision": 0.9005283018867924,
+      "n_auto_approved": 6625
+    },
+    {
+      "threshold": 0.8300000000000001,
+      "auto_approve_rate": 0.778721876495931,
+      "precision": 0.900875979714154,
+      "n_auto_approved": 6507
+    },
+    {
+      "threshold": 0.8400000000000001,
+      "auto_approve_rate": 0.7618477740545716,
+      "precision": 0.9019792648444863,
+      "n_auto_approved": 6366
+    },
+    {
+      "threshold": 0.8500000000000001,
+      "auto_approve_rate": 0.7448539971278123,
+      "precision": 0.9021529562982005,
+      "n_auto_approved": 6224
+    },
+    {
+      "threshold": 0.86,
+      "auto_approve_rate": 0.7237912876974629,
+      "precision": 0.9036044973544973,
+      "n_auto_approved": 6048
+    },
+    {
+      "threshold": 0.87,
+      "auto_approve_rate": 0.703326950694112,
+      "precision": 0.9048834439339799,
+      "n_auto_approved": 5877
+    },
+    {
+      "threshold": 0.88,
+      "auto_approve_rate": 0.6839396840593586,
+      "precision": 0.904811898512686,
+      "n_auto_approved": 5715
+    },
+    {
+      "threshold": 0.89,
+      "auto_approve_rate": 0.6562948779320249,
+      "precision": 0.9040846097738877,
+      "n_auto_approved": 5484
+    },
+    {
+      "threshold": 0.9,
+      "auto_approve_rate": 0.6258975586404979,
+      "precision": 0.9038240917782027,
+      "n_auto_approved": 5230
+    },
+    {
+      "threshold": 0.91,
+      "auto_approve_rate": 0.5890378171373863,
+      "precision": 0.9028850060950833,
+      "n_auto_approved": 4922
+    },
+    {
+      "threshold": 0.9199999999999999,
+      "auto_approve_rate": 0.5398516036381044,
+      "precision": 0.9009088893815118,
+      "n_auto_approved": 4511
+    },
+    {
+      "threshold": 0.9299999999999999,
+      "auto_approve_rate": 0.4812111057922451,
+      "precision": 0.897040537179806,
+      "n_auto_approved": 4021
+    },
+    {
+      "threshold": 0.94,
+      "auto_approve_rate": 0.4174246050741982,
+      "precision": 0.904243119266055,
+      "n_auto_approved": 3488
+    },
+    {
+      "threshold": 0.95,
+      "auto_approve_rate": 0.3506462422211584,
+      "precision": 0.909556313993174,
+      "n_auto_approved": 2930
+    },
+    {
+      "threshold": 0.96,
+      "auto_approve_rate": 0.28410722833891816,
+      "precision": 0.8984835720303286,
+      "n_auto_approved": 2374
+    },
+    {
+      "threshold": 0.97,
+      "auto_approve_rate": 0.2003350885591192,
+      "precision": 0.8799283154121864,
+      "n_auto_approved": 1674
+    },
+    {
+      "threshold": 0.98,
+      "auto_approve_rate": 0.056007659167065585,
+      "precision": 0.9658119658119658,
+      "n_auto_approved": 468
+    },
+    {
+      "threshold": 0.99,
+      "auto_approve_rate": 0.0,
+      "precision": null,
+      "n_auto_approved": 0
+    }
+  ]
+}

@@ -1,11 +1,31 @@
-# Fitted on the rvl_cdip_mini validation split by notebooks/03_calibrate_classifier.ipynb
-# (2026-07-02 Kaggle run, refit against the classifier retrained the same day -- 86.75% val
-# accuracy per results/classifier_report.json). Refit if the classifier is ever retrained again;
-# a stale temperature silently miscalibrates a different model's logits with no error raised.
-temperature: 1.177
+# Per-pipeline-stage calibration, kept in separate namespaces so no code path can accidentally
+# apply one head's temperature to the other's logits -- a single shared temperature is never
+# valid across both tasks. Each block's `model_revision` is checked by src/pipeline.py against
+# the live model's own commit hash (model.config._commit_hash) at runtime -- a mismatch raises
+# StaleCalibrationError instead of silently applying a stale temperature to a retrained model's
+# logits (retraining the classifier once silently drifted a stale T's confidence output from
+# 0.948 to 0.978 on the same input).
 
-# Predictions below this calibrated confidence get flagged for human review instead of
-# auto-approved. 0.9 is not a magic number: at this threshold the calibration run measured
-# 81.8% auto-approval at 89.0% precision on the held-out test split (see results/calibration_summary.json
-# for the full threshold curve if a different trade-off point is wanted).
-confidence_threshold: 0.9
+classifier:
+  # Fitted on the rvl_cdip_mini validation split by notebooks/03_calibrate_classifier.ipynb
+  # (2026-07-02 Kaggle run, refit against the classifier retrained the same day -- 86.75% val /
+  # 80.0% test accuracy, see results/classifier_report.json and results/calibration_summary.json).
+  temperature: 1.177
+  model_revision: c489df71df1baf78f50bc0712fb5f2179c15b0ce
+  # Predictions below this calibrated confidence get flagged for human review instead of
+  # auto-approved. Not a magic number: at this threshold the calibration run measured 81.8%
+  # auto-approval at 89.0% precision on the held-out test split (results/calibration_summary.json
+  # has the full threshold curve).
+  confidence_threshold: 0.9
+
+extraction:
+  # Fitted by scripts/calibrate_extractor.py (2026-07-04, local CPU run against FUNSD's 50-document
+  # test split -- 8,356 word-level predictions, 84.3% word-level tag accuracy). Runs locally
+  # rather than on Kaggle since extraction inference needs no GPU
+  # (results/extractor_calibration_summary.json has the full run). Previously the extraction head
+  # had no confidence signal or calibration at all -- this closes that gap.
+  temperature: 1.0807
+  model_revision: 90a46a744b2a5ff2420d3470cc7251545b1808e0
+  # At this threshold: 62.6% auto-approval at 90.4% precision on the FUNSD test split (see
+  # results/extractor_calibration_summary.json's threshold_report for the full curve).
+  confidence_threshold: 0.9
