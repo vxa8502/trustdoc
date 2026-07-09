@@ -14,7 +14,7 @@
 # reproducible and don't silently pull a future release with breaking or malicious changes.
 # Dependabot (.github/dependabot.yml) opens a PR when a pin is worth bumping, so this doesn't
 # just rot -- update via that PR (which re-runs CI) rather than hand-editing versions here.
-transformers==5.12.1
+transformers==5.13.0
 
 # CPU-only torch: on Linux (i.e. Docker), plain PyPI torch pulls in ~2GB of NVIDIA CUDA
 # packages that are never used here (OCR and inference both run CPU-only) -- the dedicated
